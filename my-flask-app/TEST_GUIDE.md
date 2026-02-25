@@ -1,6 +1,35 @@
 # Docker Compose 測試操作說明指南
 
-本文件旨在指導如何使用目前的 Docker 化測試架構，包括部署、測試功能與日常維護。
+> **注意：** 本專案已從 Flask + Python 架構改造為 **Vue3 + TypeScript (Vite) 前端 + ASP.NET (.NET 9) Web API + Postgres + Nginx** 架構。
+
+## 目錄結構
+
+```
+my-flask-app/
+├── api/                  # ASP.NET Web API (.NET 9)
+│   ├── Dockerfile
+│   ├── Program.cs
+│   ├── Api.csproj
+│   ├── Data/
+│   │   └── AppDbContext.cs
+│   ├── Models/
+│   │   └── Visit.cs
+│   ├── Migrations/
+│   └── appsettings.json
+├── frontend/             # Vue3 + TypeScript (Vite)
+│   ├── Dockerfile
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── tsconfig.json
+│   ├── index.html
+│   └── src/
+│       ├── main.ts
+│       └── App.vue
+├── nginx/
+│   └── nginx.conf        # 靜態檔案 + /api/ 反代
+├── .env
+└── docker-compose.yml
+```
 
 ## 1. 部署環境建置 (Windows WSL2 安裝 Docker Engine)
 
@@ -39,84 +68,125 @@ sudo usermod -aG docker $USER
 *(設定完群組後，請關閉該 Ubuntu 終端機並重新開啟)*
 
 ### 步驟三：啟動 Docker 服務
-由於 WSL2 預設不執行 systemd（除非特別設定），您可能需要在 Ubuntu 每次啟動時手動啟動 Docker Daemon：
 ```bash
 sudo service docker start
 ```
-*(最簡單的作法是：**開啟 WSL (Ubuntu) 終端機，直接在 Ubuntu 內進入專案目錄 `/mnt/c/DockerAppTest/my-flask-app/` 執行 `sudo docker compose up -d`**，您不需要在 Windows 安裝任何 Docker EXE 檔。)*
 
 ---
 
-## 2. 環境條件檢查腳本
+## 2. 環境變數設定 (.env)
 
-為確保您的 Windows 主機符合部署條件，我們提供了一個自動化確認腳本 `check_env.bat`。
-*   **如何執行**：在 `my-flask-app` 目錄下點擊執行 `check_env.bat`，或是於 CMD 執行。
-*   **檢查項目**：WSL2 狀態、Docker/Compose 是否能正確載入、`.env` 檔與系統記憶體。
+`.env` 檔案位於 `my-flask-app/`，包含以下設定：
+
+```dotenv
+# Database Configuration
+POSTGRES_USER=user
+POSTGRES_PASSWORD=password
+POSTGRES_DB=testdb
+DB_HOST=db
+
+# App Configuration
+APP_VERSION=1.0.0
+
+# Nginx Configuration
+NGINX_PORT=8080
+```
 
 ---
 
 ## 3. 快速開始
 
 ### 部署並啟動服務
-```powershell
-docker-compose up -d
+```bash
+cd my-flask-app
+docker compose up --build -d
 ```
-*   這會自動讀取 `.env` 檔案，建立網路、Volume，並依照健康檢查順序啟動資料庫與應用。
+
+- 自動讀取 `.env` 設定
+- 建立並啟動：`db`（Postgres）、`api`（.NET 9）、`frontend`（build-only）、`nginx`
+- `frontend` service 完成 build 後將 `dist/` 複製到共享 volume，再由 `nginx` 提供靜態檔案
 
 ### 停止並移除服務
-```powershell
-docker-compose down
+```bash
+docker compose down
 ```
 
-### 停止並完整清除資料 (磁碟卷宗)
-```powershell
-docker-compose down -v
+### 停止並完整清除資料（含資料庫 Volume）
+```bash
+docker compose down -v
 ```
 
 ---
 
 ## 4. 功能測試說明
 
-### A. 環境變數分離 (.env)
-*   **檔名**：`.env`
-*   **操作**：您可以修改 `.env` 中的 `APP_VERSION` 或 `NGINX_PORT` 後，執行 `docker-compose up -d` 即可套用新設定。
+### A. 瀏覽頁面
+開啟瀏覽器，進入 `http://localhost:8080`，可看到 Vue3 前端頁面：
+- 顯示歡迎訊息、資料庫存取次數、應用程式版本
+- 點選「記錄訪問」按鈕，呼叫 `POST /api/visits`，次數累計
+- 點選語系切換按鈕，在繁體中文與英文之間切換
 
-### B. 健康檢查 (Healthcheck)
-*   **原理**：`app` 服務現在會等待 `db` 的狀態變更為 `healthy` 後才開始啟動。
-*   **查看狀態**：
-  ```powershell
-  docker-compose ps
-  ```
-  於 `STATUS` 欄位應可看到 `(healthy)` 字樣。
+### B. API 健康檢查
+```bash
+curl http://localhost:8080/api/health
+# 回應：{"status":"healthy","version":"1.0.0"}
+```
 
-### C. 多語系測試
-應用程式支援透過 URL 參數切換語系：
-*   **繁體中文** (預設)：[http://localhost:8080/](http://localhost:8080/)
-*   **英文**：[http://localhost:8080/?lang=en](http://localhost:8080/?lang=en)
+### C. 新增訪問紀錄（繁體中文）
+```bash
+curl -X POST http://localhost:8080/api/visits
+# 回應：{"message":"Hello! 這是來自 Docker 的 .NET 應用。","db_stats":"資料庫已累計存取 1 次。","count":1,"version":"1.0.0","lang":"zh-TW"}
+```
 
-### D. 資源限制
-*   **設定**：已在 `docker-compose.yml` 中限制了各容器的記憶體上限 (Memory Limit)。
-*   **查看資源使用狀況**：
-  ```powershell
-  docker stats
-  ```
+### D. 新增訪問紀錄（英文）
+```bash
+curl -X POST "http://localhost:8080/api/visits?lang=en"
+# 回應：{"message":"Hello! This is a .NET app from Docker.","db_stats":"Database access count: 2.","count":2,"version":"1.0.0","lang":"en"}
+```
+
+### E. 查詢訪問次數
+```bash
+curl http://localhost:8080/api/visits/count
+# 回應：{"count":2}
+```
+
+### F. 多語系支援
+`lang` query parameter 支援 `zh-TW`（預設）與 `en`，其他值自動回落 `zh-TW`。
+
+### G. 資源使用狀況
+```bash
+docker stats
+```
 
 ---
 
-## 5. 軟體更新與版本控制測試
+## 5. 架構說明
 
-當您有新的程式碼更新時，請遵循以下步驟：
-
-1.  **修改程式碼**：(例如在 `app/main.py` 修改功能)。
-2.  **更新版本號**：在 `.env` 中修改 `APP_VERSION=1.0.1`。
-3.  **重新構建與啟動**：
-    ```powershell
-    docker-compose up -d --build
-    ```
-4.  **驗證**：存取網頁確認底部顯示的應用程式版本號已更新。
+| Service    | Image / Build         | 說明                                      |
+|------------|----------------------|------------------------------------------|
+| `db`       | `postgres:15`         | Postgres 資料庫，使用 Volume 持久化資料     |
+| `api`      | `./api` (build)       | ASP.NET Web API (.NET 9)，EF Core Migrations，監聽 8080（僅 container 內） |
+| `frontend` | `./frontend` (build)  | Vue3+TS build container，dist 複製到共享 Volume |
+| `nginx`    | `nginx:alpine`        | 靜態檔案 + `/api/` 反代到 `api:8080`，對外 Port: `NGINX_PORT` |
 
 ---
 
-## 6. 故障排除
-*   **查看即時日誌**：`docker-compose logs -f`
-*   **進入容器內部**：`docker-compose exec app sh`
+## 6. 軟體更新與版本控制
+
+1. 修改程式碼（`api/` 或 `frontend/src/`）。
+2. 更新 `.env` 中的 `APP_VERSION`。
+3. 重新構建與啟動：
+   ```bash
+   docker compose up --build -d
+   ```
+4. 驗證：存取 `http://localhost:8080/api/health` 確認版本已更新。
+
+---
+
+## 7. 故障排除
+
+- **查看即時日誌**：`docker compose logs -f`
+- **只看 API 日誌**：`docker compose logs -f api`
+- **進入 API 容器**：`docker compose exec api sh`
+- **進入 DB 容器**：`docker compose exec db psql -U user -d testdb`
+

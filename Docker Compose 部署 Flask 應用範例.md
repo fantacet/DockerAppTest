@@ -1,180 +1,155 @@
-這是一個完整且簡單的範例。我們將建立三個目錄與檔案，這套設定可以直接在任何安裝了 Docker 的 Linux、Windows 或 macOS 上運行。
+這是一個完整的範例，展示了 **Vue3 + TypeScript (Vite) 前端 + ASP.NET (.NET 9) Web API + Postgres + Nginx** 的 Docker Compose 架構。此設定可直接在任何安裝了 Docker 的 Linux、Windows 或 macOS 上運行。
+
+> **舊版 Flask 架構**已保留於 `my-flask-app/app/` 目錄供參考，目前架構已升級為 Vue3 + .NET 9。
 
 ## ---
 
 **1\. 專案目錄結構**
 
-請先建立一個資料夾（例如 my-flask-app），並依照以下結構配置檔案：
-
-Plaintext
-
-my-flask-app/  
-├── app/  
-│   ├── Dockerfile  
-│   ├── main.py  
-│   └── requirements.txt  
-├── nginx/  
-│   └── nginx.conf  
+```
+my-flask-app/
+├── api/                  # ASP.NET Web API (.NET 9) + EF Core
+│   ├── Dockerfile
+│   ├── Program.cs
+│   ├── Api.csproj
+│   ├── Data/AppDbContext.cs
+│   ├── Models/Visit.cs
+│   └── Migrations/
+├── frontend/             # Vue3 + TypeScript (Vite)
+│   ├── Dockerfile
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── src/
+│       ├── main.ts
+│       └── App.vue
+├── nginx/
+│   └── nginx.conf        # 靜態前端 + /api/ 反代
+├── app/                  # (舊版 Flask，保留供參考)
+├── .env
 └── docker-compose.yml
+```
 
 ## ---
 
-**2\. 各組件程式碼實作**
+**2\. 各組件說明**
 
-### **🔹 後端：Python Flask (app/)**
+### 🔹 後端：ASP.NET Web API (api/)
 
-這是應用的核心，負責處理邏輯並連線到資料庫。
+使用 .NET 9 + EF Core + Npgsql 連接 Postgres。
 
-**app/main.py** (簡單的測試存取次數程式)
+**API Endpoints：**
 
-Python
+| Method | Path | 說明 |
+|--------|------|------|
+| GET | `/api/health` | 健康檢查，回傳 `{ status, version }` |
+| POST | `/api/visits?lang=zh-TW\|en` | 新增訪問、回傳 `{ message, db_stats, count, version, lang }` |
+| GET | `/api/visits/count` | 查詢總訪問次數 `{ count }` |
 
-from flask import Flask  
-import psycopg2  
-import os
-
-app \= Flask(\_\_name\_\_)
-
-\# 從環境變數讀取資料庫資訊  
-DB\_HOST \= os.getenv('DB\_HOST', 'db')  
-DB\_NAME \= os.getenv('POSTGRES\_DB', 'testdb')  
-DB\_USER \= os.getenv('POSTGRES\_USER', 'user')  
-DB\_PASS \= os.getenv('POSTGRES\_PASSWORD', 'password')
-
-def get\_db\_connection():  
-    conn \= psycopg2.connect(host=DB\_HOST, database=DB\_NAME, user=DB\_USER, password=DB\_PASS)  
-    return conn
-
-@app.route('/')  
-def hello():  
-    conn \= get\_db\_connection()  
-    cur \= conn.cursor()  
-    \# 建立一個簡單的表來測試  
-    cur.execute('CREATE TABLE IF NOT EXISTS visits (id serial PRIMARY KEY, ts timestamp DEFAULT CURRENT\_TIMESTAMP);')  
-    cur.execute('INSERT INTO visits DEFAULT VALUES;')  
-    cur.execute('SELECT COUNT(\*) FROM visits;')  
-    count \= cur.fetchone()\[0\]  
-    cur.close()  
-    conn.commit()  
-    conn.close()  
-    return f"Hello\! 這是來自 Docker 的 Flask 應用。資料庫已累計存取 {count} 次。"
-
-if \_\_name\_\_ \== "\_\_main\_\_":  
-    app.run(host='0.0.0.0', port=5000)
-
-**app/requirements.txt**
-
-Plaintext
-
-flask  
-psycopg2-binary
-
-**app/Dockerfile** (定義如何封裝 Python 環境)
-
-Dockerfile
-
-FROM python:3.9\-slim  
-WORKDIR /app  
-COPY requirements.txt .  
-RUN pip install \--no-cache-dir \-r requirements.txt  
-COPY . .  
-CMD \["python", "main.py"\]
+**api/Dockerfile：** 使用 `mcr.microsoft.com/dotnet/sdk:9.0` 建置，`mcr.microsoft.com/dotnet/aspnet:9.0` 執行。
 
 ### ---
 
-**🔹 代理伺服器：Nginx (nginx/)**
+### 🔹 前端：Vue3 + TypeScript (frontend/)
 
-負責接收外部請求並轉發給 Flask。
+使用 Vite 建置，輸出靜態檔案到 `dist/`，由 Docker volume 傳遞給 nginx。
+
+**frontend/Dockerfile：** 使用 `node:lts-alpine` 執行 `npm ci && npm run build`，再將 dist 複製到共享 Volume。
+
+### ---
+
+### 🔹 代理伺服器：Nginx (nginx/)
+
+- `/api/` → 反代到 `api:8080`
+- `/` → 靜態檔案（支援 Vue Router history mode）
 
 **nginx/nginx.conf**
 
-Nginx
-
-server {  
+```nginx
+server {
     listen 80;
+    root /usr/share/nginx/html;
+    index index.html;
 
-    location / {  
-        proxy\_pass http://app:5000;  \# 'app' 是 docker-compose 中的服務名稱  
-        proxy\_set\_header Host $host;  
-        proxy\_set\_header X-Real-IP $remote\_addr;  
-    }  
+    location /api/ {
+        proxy_pass http://api:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
 }
+```
 
 ### ---
 
-**🔹 總指揮：Docker Compose**
-
-這是「簡單佈署」的關鍵，它定義了三個 Container 如何運作。
+### 🔹 總指揮：Docker Compose
 
 **docker-compose.yml**
 
-YAML
+```yaml
+services:
+  db:       # postgres:15
+  api:      # .NET 9 Web API (build ./api)
+  frontend: # Vue3 build container (dist → volume)
+  nginx:    # nginx:alpine (靜態 + /api/ 反代)
 
-version: '3.8'
-
-services:  
-  \# 1\. 資料庫  
-  db:  
-    image: postgres:15  
-    environment:  
-      POSTGRES\_USER: user  
-      POSTGRES\_PASSWORD: password  
-      POSTGRES\_DB: testdb  
-    volumes:  
-      \- postgres\_data:/var/lib/postgresql/data  
-    restart: always
-
-  \# 2\. Flask 應用  
-  app:  
-    build: ./app  
-    environment:  
-      DB\_HOST: db  
-      POSTGRES\_USER: user  
-      POSTGRES\_PASSWORD: password  
-      POSTGRES\_DB: testdb  
-    depends\_on:  
-      \- db
-
-  \# 3\. Nginx 反向代理  
-  nginx:  
-    image: nginx:alpine  
-    volumes:  
-      \- ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro  
-    ports:  
-      \- "8080:80"  
-    depends\_on:  
-      \- app
-
-volumes:  
-  postgres\_data:
+volumes:
+  postgres_data:
+  frontend_dist:
+```
 
 ## ---
 
 **3\. 如何執行佈署？**
 
-1. 開啟終端機（Terminal 或 CMD），進入 my-flask-app 資料夾。  
-2. 執行以下指令：  
-   Bash  
-   docker-compose up \-d
+1. 進入 `my-flask-app` 資料夾：
+   ```bash
+   cd my-flask-app
+   ```
+2. 執行：
+   ```bash
+   docker compose up --build -d
+   ```
+3. 打開瀏覽器，輸入 `http://localhost:8080`。
 
-3. 打開瀏覽器，輸入 http://localhost:8080。
+### 測試 API：
+```bash
+# 健康檢查
+curl http://localhost:8080/api/health
 
-### **為什麼這能證明你的構想？**
+# 新增訪問（繁體中文）
+curl -X POST http://localhost:8080/api/visits
 
-* **跨 OS：** 你可以把這個資料夾整包壓縮，丟到 Ubuntu、CentOS 或 Windows Server 上，只要有 Docker，執行同一行指令結果完全一樣。  
-* **簡單佈署：** 使用者不需要手動安裝 Python、PostgreSQL 或 Nginx，所有環境依賴都封裝在 Image 裡了。  
-* **解耦：** 如果你想升級資料庫，只需改 docker-compose.yml 裡的版本號，不會影響到 Flask 或 Nginx。
+# 新增訪問（英文）
+curl -X POST "http://localhost:8080/api/visits?lang=en"
+
+# 查詢總次數
+curl http://localhost:8080/api/visits/count
+```
 
 ## ---
 
-**4. Host 地端佈署必要條件**
+**4\. 環境變數 (.env)**
 
-若要在地端主機佈署此應用，需滿足以下條件：
-1. **硬體資源**：至少 1GB 以上的可用記憶體（建議 2GB 以上），以及足夠的硬碟空間（用來儲存環境映像檔，至少2GB）。
+```dotenv
+POSTGRES_USER=user
+POSTGRES_PASSWORD=password
+POSTGRES_DB=testdb
+DB_HOST=db
+APP_VERSION=1.0.0
+NGINX_PORT=8080
+```
+
+## ---
+
+**5\. Host 地端佈署必要條件**
+
+1. **硬體資源**：至少 1GB 以上的可用記憶體（建議 2GB 以上）。
 2. **軟體環境**：
    - **Linux 主機**：推薦直接安裝原生 Docker Engine 與 Docker Compose 插件。
-   - **Windows 主機**：為節省系統資源與避開授權限制，**建議不使用 Docker Desktop**。請啟用 **WSL2** 並在其中手動安裝 Linux 版的 Docker Engine 及 Compose。
+   - **Windows 主機**：建議啟用 **WSL2** 並在其中安裝 Linux 版的 Docker Engine。
 3. **專案配置**：必須準備好 `.env` 環境變數檔。
-4. **網路與權限**：具有執行 Docker 指令的權限，並確認 Web 伺服器對外 Port（如 8080）未被佔用。
 
-> 詳細的 WSL2 安裝 Docker 操作步驟與整合的環境檢查工具，請參閱 `my-flask-app/TEST_GUIDE.md` 與執行 `my-flask-app/check_env.bat`。
+> 詳細操作步驟請參閱 `my-flask-app/TEST_GUIDE.md`。
