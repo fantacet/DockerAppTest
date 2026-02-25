@@ -165,4 +165,16 @@ volumes:
 * **簡單佈署：** 使用者不需要手動安裝 Python、PostgreSQL 或 Nginx，所有環境依賴都封裝在 Image 裡了。  
 * **解耦：** 如果你想升級資料庫，只需改 docker-compose.yml 裡的版本號，不會影響到 Flask 或 Nginx。
 
-您想嘗試在特定的作業系統（例如 Linux 或 Windows）上進行測試嗎？我可以提供對應環境的安裝建議。
+## ---
+
+**4. Host 地端佈署必要條件**
+
+若要在地端主機佈署此應用，需滿足以下條件：
+1. **硬體資源**：至少 1GB 以上的可用記憶體（建議 2GB 以上），以及足夠的硬碟空間（用來儲存環境映像檔，至少2GB）。
+2. **軟體環境**：
+   - **Linux 主機**：推薦直接安裝原生 Docker Engine 與 Docker Compose 插件。
+   - **Windows 主機**：為節省系統資源與避開授權限制，**建議不使用 Docker Desktop**。請啟用 **WSL2** 並在其中手動安裝 Linux 版的 Docker Engine 及 Compose。
+3. **專案配置**：必須準備好 `.env` 環境變數檔。
+4. **網路與權限**：具有執行 Docker 指令的權限，並確認 Web 伺服器對外 Port（如 8080）未被佔用。
+
+> 詳細的 WSL2 安裝 Docker 操作步驟與整合的環境檢查工具，請參閱 `my-flask-app/TEST_GUIDE.md` 與執行 `my-flask-app/check_env.bat`。
