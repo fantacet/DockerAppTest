@@ -14,13 +14,18 @@ my-app/
 │   ├── Data/AppDbContext.cs
 │   ├── Models/Visit.cs
 │   └── Migrations/
-├── frontend/             # Vue3 + TypeScript (Vite)
+├── frontend/             # Vue 3 + TypeScript (Vite) + PrimeVue
 │   ├── Dockerfile
 │   ├── package.json
 │   ├── vite.config.ts
 │   └── src/
-│       ├── main.ts
-│       └── App.vue
+│       ├── api/          # API 呼叫層 (Axios)
+│       ├── components/   # 共用元件 (如 AppLayout.vue)
+│       ├── router/       # Vue Router 路由設定
+│       ├── stores/       # Pinia 狀態管理
+│       ├── views/        # 頁面元件 (如 DashboardView.vue, HealthView.vue)
+│       ├── App.vue
+│       └── main.ts
 ├── nginx/
 │   └── nginx.conf        # 靜態前端 + /api/ 反代
 ├── .env
@@ -49,9 +54,9 @@ my-app/
 
 ### 🔹 前端：Vue3 + TypeScript (frontend/)
 
-使用 Vite 建置，輸出靜態檔案到 `dist/`，由 Docker volume 傳遞給 nginx。
+使用 Vite 建置，並以 PrimeVue 4 做為企業級 UI 元件庫，結合 Vue Router 4 管理路由，以及 Pinia 進行狀態管理（如使用者登入態），最終輸出靜態檔案到 `dist/`，由 Docker volume 傳遞給 nginx。
 
-**frontend/Dockerfile：** 使用 `node:lts-alpine` 執行 `npm ci && npm run build`，再將 dist 複製到共享 Volume。
+**frontend/Dockerfile：** 使用 `node:lts-alpine` 執行 `npm ci && npm run build`（依賴包含 `vue-router`, `pinia`, `primevue`, `axios` 等），再將 dist 複製到共享 Volume。
 
 ### ---
 

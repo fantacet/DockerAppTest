@@ -1,7 +1,7 @@
 # .NET build artifacts
-my-flask-app/api/bin/
-my-flask-app/api/obj/
+my-app/api/bin/
+my-app/api/obj/
 
 # Node modules and build output
-my-flask-app/frontend/node_modules/
-my-flask-app/frontend/dist/
+my-app/frontend/node_modules/
+my-app/frontend/dist/
