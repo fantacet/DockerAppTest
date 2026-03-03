@@ -1,11 +1,11 @@
 # Docker Compose 測試操作說明指南
 
-> **注意：** 本專案已從 Flask + Python 架構改造為 **Vue3 + TypeScript (Vite) 前端 + ASP.NET (.NET 9) Web API + Postgres + Nginx** 架構。
+> **注意：** 本專案為 **Vue3 + TypeScript (Vite) 前端 + ASP.NET (.NET 9) Web API + Postgres + Nginx** 架構。
 
 ## 目錄結構
 
 ```
-my-flask-app/
+my-app/
 ├── api/                  # ASP.NET Web API (.NET 9)
 │   ├── Dockerfile
 │   ├── Program.cs
@@ -76,7 +76,7 @@ sudo service docker start
 
 ## 2. 環境變數設定 (.env)
 
-`.env` 檔案位於 `my-flask-app/`，包含以下設定：
+`.env` 檔案位於 `my-app/`，包含以下設定：
 
 ```dotenv
 # Database Configuration
@@ -98,7 +98,7 @@ NGINX_PORT=8080
 
 ### 部署並啟動服務
 ```bash
-cd my-flask-app
+cd my-app
 docker compose up --build -d
 ```
 

@@ -1,13 +1,12 @@
 這是一個完整的範例，展示了 **Vue3 + TypeScript (Vite) 前端 + ASP.NET (.NET 9) Web API + Postgres + Nginx** 的 Docker Compose 架構。此設定可直接在任何安裝了 Docker 的 Linux、Windows 或 macOS 上運行。
 
-> **舊版 Flask 架構**已保留於 `my-flask-app/app/` 目錄供參考，目前架構已升級為 Vue3 + .NET 9。
 
 ## ---
 
 **1\. 專案目錄結構**
 
 ```
-my-flask-app/
+my-app/
 ├── api/                  # ASP.NET Web API (.NET 9) + EF Core
 │   ├── Dockerfile
 │   ├── Program.cs
@@ -24,7 +23,6 @@ my-flask-app/
 │       └── App.vue
 ├── nginx/
 │   └── nginx.conf        # 靜態前端 + /api/ 反代
-├── app/                  # (舊版 Flask，保留供參考)
 ├── .env
 └── docker-compose.yml
 ```
@@ -104,9 +102,9 @@ volumes:
 
 **3\. 如何執行佈署？**
 
-1. 進入 `my-flask-app` 資料夾：
+1. 進入 `my-app` 資料夾：
    ```bash
-   cd my-flask-app
+   cd my-app
    ```
 2. 執行：
    ```bash
@@ -152,4 +150,4 @@ NGINX_PORT=8080
    - **Windows 主機**：建議啟用 **WSL2** 並在其中安裝 Linux 版的 Docker Engine。
 3. **專案配置**：必須準備好 `.env` 環境變數檔。
 
-> 詳細操作步驟請參閱 `my-flask-app/TEST_GUIDE.md`。
+> 詳細操作步驟請參閱 `my-app/TEST_GUIDE.md`。
