@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        html {
+            background: #ffffff;
+        }
+
+        body {
+            width: 720pt;
+            height: 405pt;
+            margin: 0;
+            padding: 0;
+            background: #F4F6F6;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #1C2833;
+            padding: 15pt 30pt;
+            color: #FFFFFF;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 28pt;
+        }
+
+        .content {
+            padding: 20pt;
+            flex: 1;
+            display: flex;
+            flex-direction: row;
+            gap: 20pt;
+        }
+
+        .card {
+            background: #FFFFFF;
+            padding: 15pt;
+            border-radius: 8pt;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            border-top: 5pt solid #2E4053;
+        }
+
+        h2 {
+            color: #1C2833;
+            font-size: 18pt;
+            margin-top: 0;
+            padding-bottom: 5pt;
+            margin-bottom: 10pt;
+        }
+
+        ul {
+            margin: 0;
+            padding-left: 20pt;
+        }
+
+        li {
+            font-size: 14pt;
+            margin-bottom: 8pt;
+            line-height: 1.3;
+            color: #333333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>後端框架與架構模式</h1>
+    </div>
+    <div class="content">
+        <div class="card">
+            <h2>技術選型：.NET 環境為主</h2>
+            <ul>
+                <li><b>框架：</b> ASP.NET Core 10 (LTS) Web API</li>
+                <li><b>ORM：</b> EF Core 10 + Npgsql (PostgreSQL)</li>
+                <li><b>安全：</b> JWT Bearer Token, Serilog + 審計日誌</li>
+            </ul>
+        </div>
+        <div class="card">
+            <h2>架構模式：簡化分層</h2>
+            <ul>
+                <li><b>Controller</b> 負責接收 API Request</li>
+                <li><b>Service</b> 負責業務核心邏輯</li>
+                <li><b>Repository</b> 負責資料庫操作</li>
+                <li><b>Entity</b> 為資料模型</li>
+            </ul>
+        </div>
+    </div>
+</body>
+
+</html>

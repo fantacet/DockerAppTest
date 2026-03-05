@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        html {
+            background: #ffffff;
+        }
+
+        body {
+            width: 720pt;
+            height: 405pt;
+            margin: 0;
+            padding: 0;
+            background: #F4F6F6;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #1C2833;
+            padding: 15pt 30pt;
+            color: #FFFFFF;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 28pt;
+        }
+
+        .content {
+            padding: 20pt;
+            display: flex;
+            flex-direction: row;
+            gap: 20pt;
+            flex: 1;
+        }
+
+        .col {
+            flex: 1;
+            background: #FFFFFF;
+            border-top: 5pt solid #2E4053;
+            padding: 15pt;
+            border-radius: 4pt;
+        }
+
+        h2 {
+            color: #1C2833;
+            font-size: 18pt;
+            margin-top: 0;
+            margin-bottom: 10pt;
+        }
+
+        ul {
+            margin: 0;
+            padding-left: 20pt;
+        }
+
+        li {
+            font-size: 14pt;
+            margin-bottom: 8pt;
+            line-height: 1.3;
+            color: #333333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Docker 部署與整合</h1>
+    </div>
+    <div class="content">
+        <div class="col">
+            <h2>Docker 獨立四容器</h2>
+            <ul>
+                <li><b>postgres:</b> 資料庫持久化 (Volume)</li>
+                <li><b>backend:</b> 全模組 API 宿主 (:5000)</li>
+                <li><b>web:</b> Nginx 負責前端與 API 代理</li>
+                <li><b>update-agent:</b> 常駐代理</li>
+            </ul>
+        </div>
+        <div class="col">
+            <h2>Office AI 與 ISA Edge</h2>
+            <ul>
+                <li>共同的 AI Client 通訊</li>
+                <li><b>OpenAI 兼容格式</b> 與擴展欄位</li>
+                <li>前端僅面對自系統 API</li>
+                <li>自動處理 Timeout、Retry</li>
+            </ul>
+        </div>
+    </div>
+</body>
+
+</html>

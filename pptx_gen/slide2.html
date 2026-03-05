@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        html {
+            background: #ffffff;
+        }
+
+        body {
+            width: 720pt;
+            height: 405pt;
+            margin: 0;
+            padding: 0;
+            background: #F4F6F6;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #1C2833;
+            padding: 15pt 30pt;
+            color: #FFFFFF;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 28pt;
+        }
+
+        .content {
+            padding: 20pt;
+            display: flex;
+            flex-direction: row;
+            gap: 20pt;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .col {
+            flex: 1;
+            background: #FFFFFF;
+            border-top: 5pt solid #2E4053;
+            padding: 15pt;
+            border-radius: 4pt;
+        }
+
+        h2 {
+            color: #1C2833;
+            font-size: 18pt;
+            margin-top: 0;
+            margin-bottom: 10pt;
+        }
+
+        ul {
+            margin: 0;
+            padding-left: 20pt;
+        }
+
+        li {
+            font-size: 14pt;
+            margin-bottom: 8pt;
+            line-height: 1.3;
+            color: #333333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>整體解決方案結構</h1>
+    </div>
+    <div class="content">
+        <div class="col">
+            <h2>Git Monorepo</h2>
+            <ul>
+                <li>包含 <b>Common</b>：共用模組 (Auth, Data, Audit, Health)</li>
+                <li>包含 <b>Modules</b>：業務模組 (Identity, Admin, AI相關)</li>
+                <li>包含 <b>Apps</b>：產品端 Host (OfficeAI, ISAEdge)</li>
+                <li>包含 <b>Frontend</b>：前端應用 (Vue 3 SPA)</li>
+            </ul>
+        </div>
+        <div class="col">
+            <h2>Docker 獨立部署</h2>
+            <ul>
+                <li>Office AI 與 ISA Edge 各自有獨立 docker-compose 設定</li>
+                <li>資料庫各自獨立操作 (PostgreSQL 實例獨立)</li>
+                <li>共用開發時的 ProjectReference，發布時統一 Docker 包裝</li>
+            </ul>
+        </div>
+    </div>
+</body>
+
+</html>

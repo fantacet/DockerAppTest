@@ -5,3 +5,11 @@ my-app/api/obj/
 # Node modules and build output
 my-app/frontend/node_modules/
 my-app/frontend/dist/
+
+# Node modules and generated files for pptx generator
+pptx_gen/node_modules/
+pptx_gen/*.pptx
+
+# Python cache (useful for agent scripts)
+__pycache__/
+*.pyc
